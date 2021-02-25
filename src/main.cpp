@@ -1,44 +1,82 @@
 #include "raylib.h"
+#include "rlgl.h"
+
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-#include "imgui.h"
-#include "imgui_impl_raylib.h"
+#include "Block.hpp"
+
+struct Player
+{
+    Vector2 pos{150, 0};
+
+    void Update()
+    {
+        if (IsKeyDown(KEY_SPACE))
+        {
+            pos.y-= 250 * GetFrameTime();
+        }
+        pos.y += 100 * GetFrameTime();
+
+        DrawRectangleV(pos, {50,50}, MAGENTA);
+    }
+};
 
 int main()
 {
-    const int screenWidth = 800;
-    const int screenHeight = 600;
+    //WINDOW INIT
+    int screenWidth = GetMonitorWidth(0);
+    int screenHeight = GetMonitorHeight(0);
 
     InitWindow(screenWidth, screenHeight, "Try Hard Wings");
-    SetTargetFPS(144);
+    SetWindowState(FLAG_FULLSCREEN_MODE);
+    SetTargetFPS(240);
 
-    // Init ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-//    ImGui::StyleColorsDark();
 
-    ImGui_ImplRaylib_Init(screenWidth, screenHeight);
+    Image icon = LoadImage("assets/david.png");
+    SetWindowIcon(icon);
 
-    while (!WindowShouldClose())
-    {
+    // GAME INIT
+    BlockList blockList;
+    Player player;
+
+    Vector2 offset = {0, (float) GetScreenHeight() / 2};
+    float speed = 100;
+
+    while (!WindowShouldClose()) {
+
+        // INPUTS
+        if (IsKeyPressed(KEY_KP_ADD))
+        {
+            speed *= 2;
+        }
+        if (IsKeyPressed(KEY_KP_SUBTRACT))
+        {
+            speed /= 2;
+        }
+
         BeginDrawing();
+        ClearBackground(SKYBLUE);
 
-        //ImGui
-        ImGui_ImplRaylib_NewFrame();
-        ImGui_ImplRaylib_ProcessEvent();
-        ImGui::NewFrame();
+        //DRAWING
+        blockList.Draw(offset);
 
-        ClearBackground(WHITE);
-        DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+        offset.x -= speed * GetFrameTime();
 
-        ImGui::ShowDemoWindow();
+        // BLOCK SHIFTING
+        while (offset.x <  -blockList.BlockStep)
+        {
+            offset.x += blockList.BlockStep;
+            blockList.Shift();
+        }
+        player.Update();
 
-        ImGui::Render();
-        raylib_render_cimgui(ImGui::GetDrawData());
+        // UI
+        DrawFPS(10, 10);
+
+        DrawText(TextFormat("Offset: %f", offset.x), 10, 48, 24, DARKGREEN);
+        DrawText(TextFormat("Speed: %f", speed), 10, 72, 24, DARKGREEN);
+
         EndDrawing();
     }
     CloseWindow();

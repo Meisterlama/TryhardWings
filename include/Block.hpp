@@ -12,12 +12,15 @@ class Block
 private:
 
     Vector2 startPos;
+    Vector2 extent;
     Vector2 pointList[BLOCK_POINTS_NUM];
+    bool ascending;
 
 public:
 
-    Block(Vector2 startPos, float (*func)(float));
-    float *GetPointList();
+    Block(Vector2 startPos, Vector2 extent, float (*func)(float), bool ascending);
+    std::vector<Vector2> GetPointList();
+    Vector2 GetLastPoint();
 };
 
 class BlockList
@@ -25,10 +28,10 @@ class BlockList
 private:
     std::vector<Block> blockVec;
 public:
-    BlockList();
+    BlockList(int blockCounts);
 
     //TODO: Block function
 //    void Shift();
-//    std::vector<float> GetPointList();
+    std::vector<Vector2> GetPointList();
 
 };

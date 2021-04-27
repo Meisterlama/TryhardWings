@@ -11,6 +11,7 @@ class Block
 {
 private:
 
+    Vector2 startPos;
     Vector2 pointList[BLOCK_POINTS_NUM];
 
 public:
@@ -26,7 +27,8 @@ private:
 public:
     BlockList();
 
-    void Shift();
-    std::vector<float> GetPointList();
+    //TODO: Block function
+//    void Shift();
+//    std::vector<float> GetPointList();
 
 };

@@ -14,7 +14,7 @@ Block::Block(Vector2 startPos, float (*func)(float)) : startPos(startPos)
     }
 }
 
-float *Block::GetPointList()
-{
-    return pointList;
-}
+//float *Block::GetPointList()
+//{
+//    return pointList;
+//}

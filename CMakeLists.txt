@@ -11,3 +11,4 @@ file(GLOB_RECURSE TRY_HARD_WINGS_SRC
 add_executable(TryHardWings ${TRY_HARD_WINGS_SRC})
 target_include_directories(TryHardWings PUBLIC include)
 target_link_libraries(TryHardWings raylib)
+target_compile_options(TryHardWings PRIVATE -fpermissive)

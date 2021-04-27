@@ -36,7 +36,7 @@ int main()
     SetWindowIcon(icon);
 
     // GAME INIT
-    BlockList blockList;
+//    BlockList blockList;
     Player player;
 
     Vector2 offset = {0, (float) GetScreenHeight() / 2};
@@ -59,17 +59,19 @@ int main()
         ClearBackground(SKYBLUE);
         BeginRLImGui();
 
-        //DRAWING
-        blockList.Draw(offset);
-
-        offset.x -= speed * GetFrameTime();
-
-        // BLOCK SHIFTING
-        while (offset.x <  -blockList.BlockStep)
-        {
-            offset.x += blockList.BlockStep;
-            blockList.Shift();
-        }
+// TODO: Block drawing
+//
+//        //DRAWING
+//        blockList.Draw(offset);
+//
+//        offset.x -= speed * GetFrameTime();
+//
+//        // BLOCK SHIFTING
+//        while (offset.x <  -blockList.BlockStep)
+//        {
+//            offset.x += blockList.BlockStep;
+//            blockList.Shift();
+//        }
         player.Update();
 
         // UI

@@ -1,30 +1,32 @@
-#define BLOCK_LIST_SIZE 1000
+#include <vector>
+#define BLOCK_LIST_SIZE 10
+#define BLOCK_MIN_WIDTH 5
+#define BLOCK_MAX_WIDTH 15
+#define BLOCK_MIN_HEIGHT 5
+#define BLOCK_MAX_HEIGHT 15
+#define BLOCK_POINTS_NUM 10
 
 struct Vector2;
-class BlockList;
 class Block
 {
-    friend BlockList;
-    Block *next = nullptr;
-    Vector2 pos = {0, 0};
+private:
 
-    Block(Vector2 _pos = {0, 0}) : pos(_pos) {};
+    Vector2 pointList[BLOCK_POINTS_NUM];
 
-    virtual float operator()(float x);
-    Vector2 GetStart();
-    Vector2 GetEnd();
-    virtual void Draw(Vector2 offset);
+public:
+
+    Block(Vector2 startPos, float (*func)(float));
+    float *GetPointList();
 };
 
 class BlockList
 {
+private:
+    std::vector<Block> blockVec;
 public:
-    Block blockList[BLOCK_LIST_SIZE]{};
-    Block* head = nullptr;
-    float BlockStep;
-
     BlockList();
 
     void Shift();
-    void Draw(Vector2 offset);
+    std::vector<float> GetPointList();
+
 };

@@ -1,8 +1,7 @@
 #include "raylib.h"
 #include "rlgl.h"
-
-#define RAYGUI_IMPLEMENTATION
-#include "raygui.h"
+#include "imgui.h"
+#include "rlImGui.h"
 
 #include "Block.hpp"
 
@@ -30,7 +29,7 @@ int main()
 
     InitWindow(screenWidth, screenHeight, "Try Hard Wings");
     SetWindowState(FLAG_FULLSCREEN_MODE);
-    SetTargetFPS(240);
+    SetTargetFPS(0);
 
 
     Image icon = LoadImage("assets/david.png");
@@ -43,6 +42,7 @@ int main()
     Vector2 offset = {0, (float) GetScreenHeight() / 2};
     float speed = 100;
 
+    SetupRLImGui(true);
     while (!WindowShouldClose()) {
 
         // INPUTS
@@ -57,6 +57,7 @@ int main()
 
         BeginDrawing();
         ClearBackground(SKYBLUE);
+        BeginRLImGui();
 
         //DRAWING
         blockList.Draw(offset);
@@ -74,11 +75,18 @@ int main()
         // UI
         DrawFPS(10, 10);
 
-        DrawText(TextFormat("Offset: %f", offset.x), 10, 48, 24, DARKGREEN);
-        DrawText(TextFormat("Speed: %f", speed), 10, 72, 24, DARKGREEN);
+        ImGui::Begin("Debug");
+
+        ImGui::Text("Offset: %f", offset.x);
+        ImGui::DragFloat("Speed", &speed);
+
+        ImGui::End();
+
+        EndRLImGui();
 
         EndDrawing();
     }
+    ShutdownRLImGui();
     CloseWindow();
     return 0;
 }

@@ -2,7 +2,7 @@
 
 precision mediump float;
 
-#define ARRAY_SIZE 512
+#define ARRAY_SIZE 128
 
 // Input vertex attributes (from vertex shader)
 varying vec2 fragTexCoord;

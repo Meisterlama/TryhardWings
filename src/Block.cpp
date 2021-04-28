@@ -1,7 +1,7 @@
 #include <raymath.h>
 #include "Block.hpp"
 
-Block::Block(Vector2 startPos, Vector2 extent, float (*func)(float), bool ascending)
+Block::Block(Vector2 startPos, Vector2 extent, float (*func)(float, bool), bool ascending)
 : startPos(startPos)
 , extent(extent)
 , ascending(ascending)
@@ -11,7 +11,7 @@ Block::Block(Vector2 startPos, Vector2 extent, float (*func)(float), bool ascend
         float step = static_cast<float>(i) / BLOCK_POINTS_NUM;
         Vector2 newPoint = Vector2 {
                 step,
-                (ascending) ? func(step) : -func(step),
+                func(step, ascending),
                 };
         pointList[i] = newPoint;
     }
@@ -38,9 +38,31 @@ Vector2 Block::GetLastPoint()
     return pos;
 }
 
-float sinMapped(float x)
+Vector2& Block::GetStartPoint()
 {
-    return sinf(x * PI);
+    return startPos;
+}
+
+float Block::GetWidth()
+{
+    return extent.x;
+}
+
+void Block::SetStartPoint(Vector2 startPoint)
+{
+    startPos = startPoint;
+}
+
+Vector2 GetRandomVector()
+{
+    return Vector2{(float)GetRandomValue(BLOCK_MIN_WIDTH, BLOCK_MAX_WIDTH),
+                   (float)GetRandomValue(BLOCK_MIN_HEIGHT, BLOCK_MAX_HEIGHT)};
+}
+
+float sinMapped(float x, bool ascending)
+{
+    float value = 0.5f * sinf(x * PI - PI/2) + 0.5f;
+    return (ascending) ? value : -value;
 }
 
 BlockList::BlockList(int blockCounts)
@@ -50,11 +72,11 @@ BlockList::BlockList(int blockCounts)
     {
         if (i == 0)
         {
-            blockVec.emplace_back(Vector2{0, 0}, Vector2{15, 15}, sinMapped, true);
+            blockVec.emplace_back(Vector2{0, 0}, GetRandomVector(), sinMapped, true);
         }
         else
         {
-            blockVec.emplace_back(blockVec[i-1].GetLastPoint(), Vector2{15,100}, sinMapped, (i%2));
+            blockVec.emplace_back(blockVec[i-1].GetLastPoint(), GetRandomVector(), sinMapped, (i%2));
         }
     }
 }
@@ -70,4 +92,35 @@ std::vector<Vector2> BlockList::GetPointList()
         }
     }
     return points;
+}
+
+float BlockList::GetFirstBlockWidth()
+{
+    return blockVec[0].GetWidth() + blockVec[0].GetStartPoint().x;
+}
+
+void BlockList::Shift()
+{
+    blockVec.erase(blockVec.cbegin());
+    blockVec.emplace_back(blockVec.back().GetLastPoint(), GetRandomVector(), sinMapped, GetRandomValue(0, 1));
+}
+
+Vector2& BlockList::GetFirstPoint()
+{
+    return blockVec[0].GetStartPoint();
+}
+
+void BlockList::ResetOffset()
+{
+    for (int i = 0; i < blockVec.size(); i++)
+    {
+        if (i == 0)
+        {
+            blockVec[i].GetStartPoint().x = 0;
+        }
+        else
+        {
+            blockVec[i].GetStartPoint().x = blockVec[i-1].GetLastPoint().x;
+        }
+    }
 }

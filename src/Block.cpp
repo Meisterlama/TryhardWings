@@ -65,6 +65,13 @@ float sinMapped(float x, bool ascending)
     return (ascending) ? value : -value;
 }
 
+float tanhMapped(float x, bool ascending)
+{
+    float expo = exp(-5.f * (2.f * x - 1.f));
+    float value = (((1.f - expo)/(1.f + expo)) + 1.f)/2.f;
+    return (ascending) ? value : -value;
+}
+
 BlockList::BlockList(int blockCounts)
 {
     blockVec.reserve(blockCounts);
@@ -72,11 +79,11 @@ BlockList::BlockList(int blockCounts)
     {
         if (i == 0)
         {
-            blockVec.emplace_back(Vector2{0, 0}, GetRandomVector(), sinMapped, true);
+            blockVec.emplace_back(Vector2{0, 0}, GetRandomVector(), tanhMapped, true);
         }
         else
         {
-            blockVec.emplace_back(blockVec[i-1].GetLastPoint(), GetRandomVector(), sinMapped, (i%2));
+            blockVec.emplace_back(blockVec[i-1].GetLastPoint(), GetRandomVector(), tanhMapped, (i%2));
         }
     }
 }
@@ -102,7 +109,7 @@ float BlockList::GetFirstBlockWidth()
 void BlockList::Shift()
 {
     blockVec.erase(blockVec.cbegin());
-    blockVec.emplace_back(blockVec.back().GetLastPoint(), GetRandomVector(), sinMapped, GetRandomValue(0, 1));
+    blockVec.emplace_back(blockVec.back().GetLastPoint(), GetRandomVector(), tanhMapped, GetRandomValue(0, 1));
 }
 
 Vector2& BlockList::GetFirstPoint()

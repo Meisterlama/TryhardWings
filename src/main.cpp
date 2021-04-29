@@ -1,7 +1,7 @@
 #include "raylib.h"
 #include "rlgl.h"
 
-#if !defined(PLATFORM_DESKTOP)
+#if !defined(PLATFORM_DESKTOP) && !defined(PLATFORM_ANDROID)
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #endif
@@ -30,7 +30,7 @@ int main()
     {
         application.Update();
     }
-#else
+#elif defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateApplication, 60, 1);
 #endif
     return 0;

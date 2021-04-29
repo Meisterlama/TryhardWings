@@ -10,7 +10,7 @@ struct Player
 
     void Update()
     {
-        if (IsKeyDown(KEY_SPACE))
+        if (IsKeyDown(KEY_SPACE) || GetTouchPointsCount() == 2)
         {
             velocity.y = -100;
         }

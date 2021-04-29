@@ -7,7 +7,7 @@
 #include "rlImGui.h"
 
 Application::Application(Vector2 screenSize)
-: blockList(20)
+: blockList(40)
 , terrainShader(TextFormat(TextFormat("assets/terrain%i.fs", GLSL_VERSION)), DARKBLUE, DARKBROWN)
 {
     SetShaderValue(terrainShader.shader,
@@ -18,6 +18,9 @@ Application::Application(Vector2 screenSize)
     origin = {screenSize.x, screenSize.y / 2};
     gameConfig.targetHeight = origin.y;
     SetupRLImGui(true);
+
+    auto virtualPoints = blockList.GetPointList();
+    player.position.y = GetPointFromFunction( player.position.x + 15.f * scale.x, virtualPoints) * scale.y;
 }
 
 void Application::Update()
@@ -39,13 +42,21 @@ void Application::Update()
     }
 
     // INPUTS
-    if (IsKeyDown(KEY_KP_ADD))
+    if (IsKeyPressed(KEY_KP_ADD))
     {
-        player.velocity.x += 2;
+        player.velocity.x += 20.f;
     }
-    if (IsKeyDown(KEY_KP_SUBTRACT))
+    if (GetTouchPointsCount() == 3 && (float)GetTouchX() > screenSize.x / 2)
     {
-        player.velocity.x -= 2;
+        player.velocity.x += 20.f * GetFrameTime();
+    }
+    if (IsKeyPressed(KEY_KP_SUBTRACT))
+    {
+        player.velocity.x -= 20.f;
+    }
+    if (GetTouchPointsCount() == 3 && (float)GetTouchX() < screenSize.x / 2)
+    {
+        player.velocity.x -= 20.f * GetFrameTime();
     }
 
     if(IsKeyPressed(KEY_F1))
@@ -72,15 +83,16 @@ void Application::Update()
     }
 
     auto virtualPoints = blockList.GetPointList();
+    int lastIndex = 0;
     std::vector<Vector2> realPoints = GetShaderReadyPoints({{player.position.x, 0}, scale}, virtualPoints);
 
-    float heightUnderPlayer = GetPointFromFunction( player.position.x + 15 * scale.x, virtualPoints) * scale.y;
+    float heightUnderPlayer = GetPointFromFunction( player.position.x + 15.f * scale.x, virtualPoints) * scale.y;
     if (player.position.y > heightUnderPlayer)
     {
         player.velocity.y = 0;
         gameConfig.targetHeight = origin.y + (player.position.y - offset.y);
 //        player.velocity.y -= (player.position.y - heightUnderPlayer);
-//        player.position.y = heightUnderPlayer;
+        player.position.y = heightUnderPlayer;
     }
 
 
@@ -92,8 +104,9 @@ void Application::Update()
     BeginDrawing();
     DrawGameState(heightUnderPlayer);
     DrawDebug(virtualPoints, realPoints);
-    DrawCircle(30, origin.y, 5, MAGENTA);
-    DrawCircle( 30,  heightUnderPlayer + origin.y - player.position.y, 3, LIME);
+    DrawCircle(30.f, origin.y, 5, MAGENTA);
+    DrawCircle( 30.f,  heightUnderPlayer + origin.y - player.position.y, 3, LIME);
+
     EndDrawing();
 
 }
@@ -131,9 +144,9 @@ void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std
 
     float lineHeight = 0.5 * gameConfig.targetHeight + origin.y - player.position.y;
     DrawLine(0, lineHeight,
-             screenSize.x, lineHeight, GRAY);
+             screenSize.x, lineHeight, ColorAlpha(GRAY, 0.5));
     DrawLine(30, 0,
-             30, screenSize.y, GRAY);
+             30, screenSize.y, ColorAlpha(GRAY, 0.5));
 
     BeginRLImGui();
     static bool isDebugOpen = true;
@@ -164,7 +177,18 @@ void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std
         ImGui::DragFloat2("Scale", (float*)&scale, 0.01, 0);
         ImGui::Text("Player: %.2f,\t%.2f", player.position.x , gameConfig.targetHeight - 2 * player.position.y);
         ImGui::Text("Velocity: %.2f,\t%.2f", player.velocity.x, player.velocity.y);
+        ImGui::Text("ScreenSize: %.2f,\t%.2f", screenSize.x, screenSize.y);
         ImGui::Text("lineHeight: %.2f", lineHeight);
+
+        ImGui::Text("Inputs\n"
+                    "Desktop:\n"
+                    "\tSpace: up\n"
+                    "\t+: Speed up\n"
+                    "\t-: Slow Down\n"
+                    "Mobile:\n"
+                    "\tTwo touch : Up\n"
+                    "\tThree touch : Speed up if touching\n"
+                    "\t\ton right, else slow down");
         ImGui::End();
     }
     EndRLImGui();

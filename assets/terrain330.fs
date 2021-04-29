@@ -22,7 +22,9 @@ void main()
     float screen_step = gl_FragCoord.x / resolution.x;
     int index = int(floor(screen_step * ARRAY_SIZE));
 
-    finalColor = mix(downColor, upColor, step(fragTexCoord.y * resolution.y - offset.y, pointList[index].y));
+    float point = mix(pointList[index].y, pointList[index+1].y, screen_step * ARRAY_SIZE - index);
+
+    finalColor = mix(downColor, upColor, step(fragTexCoord.y * resolution.y - offset.y, point));
 
     //    finalColor = vec4(pixelPos.x, pixelPos.y, 0.0, 1.0);
 }

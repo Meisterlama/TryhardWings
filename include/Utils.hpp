@@ -3,6 +3,8 @@
 #include <vector>
 #include "Structs.hpp"
 float GetPointFromFunction(float x,
+                           const std::vector<Vector2> &points, int& lastIndex);
+float GetPointFromFunction(float x,
                            const std::vector<Vector2> &points);
 
 std::vector<Vector2> GetShaderReadyPoints(const Transform2D &transform, const std::vector<Vector2> &virtualPoints);

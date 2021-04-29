@@ -5,8 +5,7 @@
 float GetPointFromFunction(float x,
                            const std::vector<Vector2> &points);
 
-std::vector<Vector2>GetShaderReadyPoints(const Transform2D &transform,
-                                         const std::vector<Vector2> &virtualPoints);
+std::vector<Vector2> GetShaderReadyPoints(const Transform2D &transform, const std::vector<Vector2> &virtualPoints);
 
 void DrawDebugPoints(const std::vector<Vector2> &points,
                      Color color,

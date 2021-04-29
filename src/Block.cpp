@@ -96,7 +96,7 @@ std::vector<Vector2> BlockList::GetPointList()
 
 float BlockList::GetFirstBlockWidth()
 {
-    return blockVec[0].GetWidth() + blockVec[0].GetStartPoint().x;
+    return blockVec[0].GetWidth();// + blockVec[0].GetStartPoint().x;
 }
 
 void BlockList::Shift()

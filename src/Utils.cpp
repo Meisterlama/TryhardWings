@@ -22,11 +22,11 @@ GetShaderReadyPoints(const Transform2D &transform, const std::vector<Vector2> &v
     real_points.reserve(SHADER_ARRAY_SIZE);
     for (int i = 0; i < SHADER_ARRAY_SIZE; i++)
     {
-        float step = (float) i / SHADER_ARRAY_SIZE;
-        float x = transform.position.x + step * SHADER_ARRAY_SIZE * transform.scale.x;
+        float step = (float) i;
+        float x = transform.position.x + step * transform.scale.x;
         Vector2 point = {
-                x - transform.position.x,
-                GetPointFromFunction(x, virtualPoints) * transform.scale.y,
+                x,
+                GetPointFromFunction(x, virtualPoints) * transform.scale.y + transform.position.y,
         };
         real_points.push_back(point);
     }
@@ -37,8 +37,8 @@ void DrawDebugPoints(const std::vector<Vector2> &points, Color color, Vector2 po
 {
     for (int i = 0; i < points.size() - 1; i++)
     {
-        Vector2 firstPoint = Vector2Add(points[i], position);
-        Vector2 secondPoint = Vector2Add(points[i + 1], position);
-        DrawLineV(Vector2Multiply(firstPoint, scale), Vector2Multiply(secondPoint, scale), color);
+        Vector2 scaledPoint1 = Vector2Multiply(points[i], scale);
+        Vector2 scaledPoint2 = Vector2Multiply(points[i+1], scale);
+        DrawLineV(Vector2Add(position, scaledPoint1) , Vector2Add(position, scaledPoint2), color);
     }
 }

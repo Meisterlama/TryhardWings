@@ -20,10 +20,13 @@ private:
 
     Vector2 screenSize{1000.f, 600.f};
     TerrainShader terrainShader;
-    GameConfig gameConfig;
-    Transform2D transform;
+    GameConfig gameConfig{};
+    Vector2 offset{};
+    Vector2 scale{1.0, 1.0};
+    Vector2 origin{};
     RenderTexture2D target;
-    RenderTexture2D miniMap;
+
+    float scaleSpeed = 500.f;
 
 
     bool shouldRefreshTarget = true;
@@ -33,6 +36,9 @@ public:
     Application(Vector2 screenSize);
 
     void Update();
+
+    void DrawGameState(float heightUnderPlayer);
+    void DrawDebug(const std::vector<Vector2>& virtualPoints, const std::vector<Vector2>& realPoints);
 
     ~Application();
 };

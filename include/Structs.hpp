@@ -1,18 +1,22 @@
 #pragma once
+#include <raymath.h>
+#include "raylib.h"
 
 struct Player
 {
-    Vector2 pos{150, 0};
+    Vector2 position = {60.0f, 0.0f};
+    Vector2 velocity = {1.0f, 0.0f};
+    float acceleration = 100.0f;
 
     void Update()
     {
         if (IsKeyDown(KEY_SPACE))
         {
-            pos.y -= 250 * GetFrameTime();
+            velocity.y = -100;
         }
-        pos.y += 100 * GetFrameTime();
+        velocity.y += acceleration * GetFrameTime();
 
-        DrawRectangleV(pos, {50, 50}, MAGENTA);
+        position = Vector2Add(position, Vector2Multiply(velocity, {GetFrameTime(), GetFrameTime()}));
     }
 };
 
@@ -22,10 +26,10 @@ struct Transform2D
     Vector2 scale = Vector2{0.f, 0.f};
 };
 
-struct GameConfig {
+struct GameConfig
+{
     float lerpSpeed = 0.1;
-    float targetHeight = 200;
-    float speed = 100;
+    float targetHeight = 0;
 };
 
 struct TerrainShader
@@ -37,7 +41,7 @@ struct TerrainShader
     int upColorLoc;
     int downColorLoc;
 
-    TerrainShader(const char* fsFileName, Color upColor, Color downColor)
+    TerrainShader(const char *fsFileName, Color upColor, Color downColor)
     {
         shader = LoadShader(0, fsFileName);
         pointListLoc = GetShaderLocation(shader, "pointList");

@@ -3,28 +3,21 @@
 #include "raymath.h"
 #include "Utils.hpp"
 
-#if 1//defined(PLATFORM_DESKTOP)
 #include "imgui.h"
 #include "rlImGui.h"
-#endif
 
 Application::Application(Vector2 screenSize)
-: blockList(15)
+: blockList(20)
 , terrainShader(TextFormat(TextFormat("assets/terrain%i.fs", GLSL_VERSION)), DARKBLUE, DARKBROWN)
 {
     SetShaderValue(terrainShader.shader,
                    terrainShader.resolutionLoc,
                    &screenSize,
                    UNIFORM_VEC2);
-    transform =
-            {
-                    {0,   (float) GetScreenHeight() / 2},
-                    {1.0, 1.0},
-            };
-    miniMap = LoadRenderTexture(200, 200);
-#if 1//defined(PLATFORM_DESKTOP)
+
+    origin = {screenSize.x, screenSize.y / 2};
+    gameConfig.targetHeight = origin.y;
     SetupRLImGui(true);
-#endif
 }
 
 void Application::Update()
@@ -33,12 +26,12 @@ void Application::Update()
     if (IsWindowResized())
     {
         screenSize = Vector2{(float) GetScreenWidth(), (float) GetScreenHeight()};
+        origin = {screenSize.x, screenSize.y / 2};
         shouldRefreshTarget = true;
         lastTimeSinceResize = GetTime();
     }
     else if (shouldRefreshTarget && GetTime() - lastTimeSinceResize > 0.1f)
     {
-        TraceLog(LOG_INFO, "ScreenSize: %f, %f", screenSize.x, screenSize.y);
         UnloadRenderTexture(target);
         target = LoadRenderTexture((int) screenSize.x, (int) screenSize.y);
         SetShaderValue(terrainShader.shader, terrainShader.resolutionLoc, &screenSize, UNIFORM_VEC2);
@@ -46,70 +39,101 @@ void Application::Update()
     }
 
     // INPUTS
-    if (IsKeyPressed(KEY_KP_ADD))
+    if (IsKeyDown(KEY_KP_ADD))
     {
-        gameConfig.speed *= 2;
+        player.velocity.x += 2;
     }
-    if (IsKeyPressed(KEY_KP_SUBTRACT))
+    if (IsKeyDown(KEY_KP_SUBTRACT))
     {
-        gameConfig.speed /= 2;
+        player.velocity.x -= 2;
     }
 
-    transform.position.x += GetFrameTime() * gameConfig.speed;
-    transform.position.y = Lerp(transform.position.y, screenSize.y - gameConfig.targetHeight - blockList.GetFirstPoint().y,
-                                gameConfig.lerpSpeed);
-
-//    player.Update();
-
-    while (transform.position.x > blockList.GetFirstBlockWidth())
+    if(IsKeyPressed(KEY_F1))
     {
         blockList.Shift();
+        player.position.x -= blockList.GetFirstPoint().x;
+        blockList.ResetOffset();
+    }
 
-        if (transform.position.x > 10000.f)
-        {
-            transform.position.x -= blockList.GetFirstPoint().x;
-            blockList.ResetOffset();
-        }
+//    offset.y = Lerp(offset.y,gameConfig.targetHeight - blockList.GetFirstPoint().y,
+//                                gameConfig.lerpSpeed);
+
+    player.Update();
+
+    scale.x = logf(player.velocity.x/scaleSpeed + 1) + 1;
+
+    offset.y = origin.y - player.position.y;
+
+    while (player.position.x > blockList.GetFirstBlockWidth())
+    {
+        blockList.Shift();
+        player.position.x -= blockList.GetFirstPoint().x;
+        blockList.ResetOffset();
     }
 
     auto virtualPoints = blockList.GetPointList();
-    std::vector<Vector2> real_points = GetShaderReadyPoints(transform, virtualPoints);
+    std::vector<Vector2> realPoints = GetShaderReadyPoints({{player.position.x, 0}, scale}, virtualPoints);
 
-    SetShaderValueV(terrainShader.shader, terrainShader.pointListLoc, real_points.data(), UNIFORM_VEC2, (int) real_points.size());
-    SetShaderValue(terrainShader.shader, terrainShader.offsetLoc, &transform.position, UNIFORM_VEC2);
+    float heightUnderPlayer = GetPointFromFunction( player.position.x + 15 * scale.x, virtualPoints) * scale.y;
+    if (player.position.y > heightUnderPlayer)
+    {
+        player.velocity.y = 0;
+        gameConfig.targetHeight = origin.y + (player.position.y - offset.y);
+//        player.velocity.y -= (player.position.y - heightUnderPlayer);
+//        player.position.y = heightUnderPlayer;
+    }
+
+
+    SetShaderValueV(terrainShader.shader, terrainShader.pointListLoc, realPoints.data(), UNIFORM_VEC2, (int) realPoints.size());
+
+    Vector2 realOffset = {0, gameConfig.targetHeight - 2 * player.position.y};
+    SetShaderValue(terrainShader.shader, terrainShader.offsetLoc, &offset, UNIFORM_VEC2);
 
     BeginDrawing();
+    DrawGameState(heightUnderPlayer);
+    DrawDebug(virtualPoints, realPoints);
+    DrawCircle(30, origin.y, 5, MAGENTA);
+    DrawCircle( 30,  heightUnderPlayer + origin.y - player.position.y, 3, LIME);
+    EndDrawing();
+
+}
+
+Application::~Application()
+{
+    ShutdownRLImGui();
+    CloseWindow();
+}
+void Application::DrawGameState(float heightUnderPlayer)
+{
     ClearBackground(WHITE);
     BeginShaderMode(terrainShader.shader);
     BeginTextureMode(target);
     DrawTextureRec(target.texture,
-                   (Rectangle) {0, 0, (float) target.texture.width, (float) -target.texture.height},
-                   (Vector2) {0, 0},
+                   Rectangle {0, 0, (float) target.texture.width, (float) target.texture.height},
+                   Vector2 {0, 0},
                    WHITE);
     EndShaderMode();
     EndTextureMode();
 
-    DrawTexture(target.texture, 0, 0, WHITE);
+    DrawTextureRec(target.texture,
+                   Rectangle {0, 0, (float) target.texture.width, (float) -target.texture.height},
+                   Vector2 {0, 0},
+                   WHITE);
 
-    Vector2 startPoint = blockList.GetFirstPoint();
+}
+void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std::vector<Vector2>& realPoints)
+{
+    Vector2 virtualPointsOffset = {offset.x, offset.y + 3.f};
+    Vector2 realPointsOffset = {0, 0};
 
-    Vector2 realPointsOffset = {transform.position.x - startPoint.x, transform.position.y};
-    Vector2 virtualPointsOffset = {-startPoint.x, transform.position.y + 5.f};
-    static Vector2 curvePos = Vector2{50.f, 50.f};
-    static Vector2 curveScale = Vector2{0.5f, 0.5f};
-    Transform2D debugOffset = {
-            curvePos,
-            curveScale,
-    };
+    DrawDebugPoints(realPoints, GREEN, {0,origin.y}, {1, 1});
+    DrawDebugPoints(virtualPoints, RED, {0, origin.y + 3.f}, {1, scale.y});
 
-    DrawRectangleV(Vector2Add(player.pos, {0, transform.position.y}), Vector2{10, 10}, MAGENTA);
-
-#if 1//defined(PLATFORM_DESKTOP)
-    BeginTextureMode(miniMap);
-    ClearBackground(BLANK);
-    DrawDebugPoints(real_points, GREEN, Vector2Subtract(realPointsOffset, {0, gameConfig.targetHeight}), debugOffset.scale);
-    DrawDebugPoints(virtualPoints, RED, Vector2Subtract(virtualPointsOffset, {0, gameConfig.targetHeight}), debugOffset.scale);
-    EndTextureMode();
+    float lineHeight = 0.5 * gameConfig.targetHeight + origin.y - player.position.y;
+    DrawLine(0, lineHeight,
+             screenSize.x, lineHeight, GRAY);
+    DrawLine(30, 0,
+             30, screenSize.y, GRAY);
 
     BeginRLImGui();
     static bool isDebugOpen = true;
@@ -117,7 +141,6 @@ void Application::Update()
     {
         ImGui::Text("FPS: %i", GetFPS());
         ImGui::Separator();
-        ImGui::Text("Offset: %f, %f", transform.position.x, transform.position.y);
         if(ImGui::BeginMenu("Windows"))
         {
             if (ImGui::MenuItem("Open Debug"))
@@ -132,24 +155,17 @@ void Application::Update()
         ImGui::SetNextWindowPos({4.0f/5.0f * screenSize.x, 30});
         ImGui::SetNextWindowSize({1.0f/5.0f * screenSize.x, 4.0f/5.0f * screenSize.y});
         ImGui::Begin("Debug", &isDebugOpen);
-        ImGui::DragFloat("Speed", &gameConfig.speed);
-        ImGui::DragFloat("lerpSpeed", &gameConfig.lerpSpeed, 0.01, 0, 1, "%.3f", ImGuiSliderFlags_Logarithmic);
+        ImGui::DragFloat("Speed", &player.velocity.x);
+        ImGui::DragFloat("scaleSpeed", &scaleSpeed, 1, 0, FLT_MAX, "%.3f");
         ImGui::DragFloat("targetHeight", &gameConfig.targetHeight);
-        ImGui::DragFloat2("Horizontal Scale", (float *) &transform.scale, 0.01);
-        ImGui::DragFloat2("CurvePos", (float *) &curvePos);
-        ImGui::DragFloat2("curveScale", (float *) &curveScale, 0.01);
-        RLImGuiImage(&miniMap.texture);
+        ImGui::DragFloat2("Offset", (float*)&offset);
+        ImGui::DragFloat2("PlayerPosition", (float*)&player.position);
+        ImGui::DragFloat2("Origin", (float*)&origin);
+        ImGui::DragFloat2("Scale", (float*)&scale, 0.01, 0);
+        ImGui::Text("Player: %.2f,\t%.2f", player.position.x , gameConfig.targetHeight - 2 * player.position.y);
+        ImGui::Text("Velocity: %.2f,\t%.2f", player.velocity.x, player.velocity.y);
+        ImGui::Text("lineHeight: %.2f", lineHeight);
         ImGui::End();
     }
     EndRLImGui();
-#endif
-    EndDrawing();
-}
-
-Application::~Application()
-{
-#if defined(PLATFORM_DESKTOP)
-    ShutdownRLImGui();
-#endif
-    CloseWindow();
 }

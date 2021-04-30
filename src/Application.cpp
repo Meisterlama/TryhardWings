@@ -6,6 +6,22 @@
 #include "imgui.h"
 #include "rlImGui.h"
 
+void Application::SetupEditorStyle()
+{
+    ImGuiStyle& editorStyle = ImGui::GetStyle();
+    editorStyle.Colors[ImGuiCol_WindowBg] = ImVec4(0.15f, 0.15f, 0.15f, 0.5f);
+    editorStyle.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.15f, 0.15f, 0.15f, 0.8f);
+    editorStyle.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.2f, 0.2f, 0.2f, 0.8f);
+    editorStyle.Colors[ImGuiCol_ButtonActive] = ImVec4(0.15f, 0.15f, 0.15f, 0.8f);
+    editorStyle.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.25f, 0.25f, 0.25f, 0.8f);
+    editorStyle.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.15f, 0.15f, 0.15f, 0.8f);
+    editorStyle.Colors[ImGuiCol_FrameBg] = ImVec4(0.05f, 0.05f, 0.05f, 0.8f);
+    editorStyle.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.15f, 0.15f, 0.15f, 0.8f);
+
+    editorStyle.FrameRounding = 5;
+    editorStyle.WindowRounding = 5;
+}
+
 Application::Application(Vector2 screenSize)
 : blockList(5)
 , terrainShader(TextFormat(TextFormat("assets/terrain%i.fs", GLSL_VERSION)), DARKBLUE, DARKBROWN)
@@ -27,6 +43,7 @@ Application::Application(Vector2 screenSize)
 
 void Application::Update()
 {
+
     // WINDOW RESIZING
     if (IsWindowResized())
     {
@@ -135,6 +152,8 @@ void Application::DrawGameState(float heightUnderPlayer)
 void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std::vector<Vector2>& realPoints)
 {
     BeginRLImGui();
+    SetupEditorStyle();
+
     static bool isMenuOpen = false;
     static bool isMetricsOpen = false;
     static bool isHelpOpen = false;
@@ -148,6 +167,8 @@ void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std
     static bool drawDebugGizmo = false;
 #endif
 
+    //ImGui::ShowDemoWindow();
+
     if (IsKeyPressed(KEY_F1))
         isMenuOpen = !isMenuOpen;
     if (GetTouchPointsCount() == 3)
@@ -156,7 +177,7 @@ void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std
         isDebugOpen = !isDebugOpen;
     if (isMenuOpen)
     {
-        ImGui::Begin("Debug Menu", &isMenuOpen, ImGuiWindowFlags_MenuBar);
+        ImGui::Begin("Help Menu", &isMenuOpen, ImGuiWindowFlags_MenuBar);
         if(ImGui::BeginMenuBar())
         {
             ImGui::Text("FPS: %i", GetFPS());
@@ -238,3 +259,4 @@ void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std
     }
     EndRLImGui();
 }
+

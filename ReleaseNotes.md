@@ -23,3 +23,18 @@ You'll firstly be able too see the bindings directly in-game!
 - __F1__ : Opens the help menu; this menu lets you change the curves and will show the bindings too.
 - __A/-/left arrow__ : Increases your speed
 - __D/+/right arrow__ : Decreases your speed
+
+##More information
+
+Our main code classes are:
+- Application - runs the application
+- Block - represents one block of the map 
+- BlockList - the map (array of blocks)
+- Player - contains some information about the player to be able to play
+
+Our Implementation's limits were mainly the zoom in/out as we only have an horizontal one yet and makes us having a bad overall vision of the curves.
+Tweaking the game was really hard and that's one point we could really improve for possible next updates.
+
+
+##Known bugs
+There are currently no known bugs!

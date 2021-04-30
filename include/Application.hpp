@@ -40,5 +40,6 @@ public:
     void DrawGameState(float heightUnderPlayer);
     void DrawDebug(const std::vector<Vector2>& virtualPoints, const std::vector<Vector2>& realPoints);
 
+    void SetupEditorStyle();
     ~Application();
 };

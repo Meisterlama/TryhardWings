@@ -21,8 +21,7 @@ We made it downloadable but it still is playable in HTML, even with your phone!
 You'll firstly be able too see the bindings directly in-game!
 
 - __F1__ : Opens the help menu; this menu lets you change the curves and will show the bindings too.
-- __A/-/left arrow__ : Increases your speed
-- __D/+/right arrow__ : Decreases your speed
+- __SpaceBar__: Add diagonal velocity to your character
 
 ##More information
 

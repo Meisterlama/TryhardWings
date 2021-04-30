@@ -23,7 +23,7 @@ void Application::SetupEditorStyle()
 }
 
 Application::Application(Vector2 screenSize)
-: blockList(5)
+: blockList(30)
 , terrainShader(TextFormat(TextFormat("assets/terrain%i.fs", GLSL_VERSION)), DARKBLUE, DARKBROWN)
 , screenSize(screenSize)
 {

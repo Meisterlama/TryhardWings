@@ -139,7 +139,6 @@ MathFunction *BlockList::GetRandomFunction()
             index = profile;
             break;
     }
-    TraceLog(LOG_INFO, TextFormat("Got function with idx: %i", index));
     return functions[index];
 }
 

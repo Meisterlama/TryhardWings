@@ -70,13 +70,23 @@ static void rlImGuiNewFrame()
     }
     else
     {
+#if defined(PLATFORM_DESKTOP)
         io.MousePos.x = (float)GetMouseX();
         io.MousePos.y = (float)GetMouseY();
+#elif defined(PLATFORM_WEB)
+        io.MousePos.x = (float)GetTouchX();
+        io.MousePos.y = (float)GetTouchY();
+#endif
     }
 
+#if defined(PLATFORM_DESKTOP)
     io.MouseDown[0] = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
     io.MouseDown[1] = IsMouseButtonDown(MOUSE_RIGHT_BUTTON);
     io.MouseDown[2] = IsMouseButtonDown(MOUSE_MIDDLE_BUTTON);
+#elif defined(PLATFORM_WEB)
+    io.MouseDown[0] = (io.MouseDown[0] && (IsGestureDetected(GESTURE_DRAG) || IsGestureDetected(GESTURE_HOLD)))
+            || IsGestureDetected(GESTURE_TAP);
+#endif
 
     if (GetMouseWheelMove() > 0)
         io.MouseWheel += 1;

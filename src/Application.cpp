@@ -17,11 +17,12 @@ Application::Application(Vector2 screenSize)
                    UNIFORM_VEC2);
 
     origin = {screenSize.x, screenSize.y / 2};
-    gameConfig.targetHeight = origin.y;
     SetupRLImGui(true);
 
     auto virtualPoints = blockList.GetPointList();
     player.position.y = GetPointFromFunction( player.position.x + 15.f * scale.x, virtualPoints) * scale.y;
+    gameConfig.targetHeight = player.position.y;
+    gameConfig.highScore = 0.f;
 }
 
 void Application::Update()
@@ -42,24 +43,10 @@ void Application::Update()
         shouldRefreshTarget = false;
     }
 
-    // INPUTS
-
-
-    if(IsKeyPressed(KEY_F1))
-    {
-        blockList.Shift();
-        player.position.x -= blockList.GetFirstPoint().x;
-        blockList.ResetOffset();
-    }
-
-//    offset.y = Lerp(offset.y,gameConfig.targetHeight - blockList.GetFirstPoint().y,
-//                                gameConfig.lerpSpeed);
-
     player.Update();
 
     scale.x = logf(player.velocity.x/scaleSpeed + 1) + 1;
-
-    offset.y = origin.y - player.position.y;
+    yOffset = origin.y - player.position.y;
 
     while (player.position.x > blockList.GetFirstBlockWidth())
     {
@@ -70,29 +57,34 @@ void Application::Update()
 
     auto virtualPoints = blockList.GetPointList();
     int lastIndex = 0;
-    std::vector<Vector2> realPoints = GetShaderReadyPoints({{player.position.x, 0}, scale}, virtualPoints);
+    std::vector<Vector2> realPoints = GetShaderReadyPoints(
+            Transform2D{
+                {player.position.x, 0},
+                Vector2Multiply(scale, {screenSize.x / 1000.f, 1.0f})
+                        },
+                        virtualPoints);
 
     float heightUnderPlayer = GetPointFromFunction( player.position.x + 15.f * scale.x, virtualPoints) * scale.y;
     if (player.position.y > heightUnderPlayer)
     {
         player.velocity.y = 0;
-        gameConfig.targetHeight = origin.y + (player.position.y - offset.y);
+        gameConfig.targetHeight = origin.y + (player.position.y - yOffset);
 //        player.velocity.y -= (player.position.y - heightUnderPlayer);
         player.position.y = heightUnderPlayer;
     }
 
+    float playerHeight = 0.5 * gameConfig.targetHeight - player.position.y;
+    gameConfig.highScore = (gameConfig.highScore < playerHeight) ? playerHeight : gameConfig.highScore;
+    gameConfig.currentScore = playerHeight;
 
     SetShaderValueV(terrainShader.shader, terrainShader.pointListLoc, realPoints.data(), UNIFORM_VEC2, (int) realPoints.size());
 
     Vector2 realOffset = {0, gameConfig.targetHeight - 2 * player.position.y};
-    SetShaderValue(terrainShader.shader, terrainShader.offsetLoc, &offset, UNIFORM_VEC2);
+    SetShaderValue(terrainShader.shader, terrainShader.offsetLoc, &yOffset, UNIFORM_FLOAT);
 
     BeginDrawing();
     DrawGameState(heightUnderPlayer);
     DrawDebug(virtualPoints, realPoints);
-    DrawCircle(30.f, origin.y, 5, MAGENTA);
-    DrawCircle( 30.f,  heightUnderPlayer + origin.y - player.position.y, 3, LIME);
-
     EndDrawing();
 
 }
@@ -120,80 +112,101 @@ void Application::DrawGameState(float heightUnderPlayer)
                    Rectangle {0, 0, (float) target.texture.width, (float) -target.texture.height},
                    Vector2 {0, 0},
                    WHITE);
+    DrawCircle(30.f, origin.y, 5, MAGENTA);
 
+    DrawText(TextFormat("Press F1 (or touch with 3 fingers) to open help"), 20, 10, 10, WHITE);
+    DrawText(TextFormat("High Score: %.2f", gameConfig.highScore), 20, 30, 20, WHITE);
+    DrawText(TextFormat("Current Score: %.2f", gameConfig.currentScore), 20, 50, 20, WHITE);
 }
 void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std::vector<Vector2>& realPoints)
 {
-    Vector2 virtualPointsOffset = {offset.x, offset.y + 3.f};
-    Vector2 realPointsOffset = {0, 0};
-
-    DrawDebugPoints(realPoints, GREEN, {0,origin.y}, {1, 1});
-    DrawDebugPoints(virtualPoints, RED, {0, origin.y + 3.f}, {1, scale.y});
-
-    float lineHeight = 0.5 * gameConfig.targetHeight + origin.y - player.position.y;
-    DrawLine(0, lineHeight,
-             screenSize.x, lineHeight, ColorAlpha(GRAY, 0.5));
-    DrawLine(30, 0,
-             30, screenSize.y, ColorAlpha(GRAY, 0.5));
-
     BeginRLImGui();
-    static bool isDebugOpen = true;
-    if (ImGui::BeginMainMenuBar())
+    static bool isMenuOpen = false;
+    static bool isDebugOpen = false;
+    static bool isMetricsOpen = false;
+    static bool isHelpOpen = false;
+    static bool drawDebugGizmo = false;
+
+    if (IsKeyPressed(KEY_F1))
+        isMenuOpen = !isMenuOpen;
+    if (GetTouchPointsCount() == 3)
+        isMenuOpen = true;
+    if (IsKeyPressed(KEY_F2))
+        isDebugOpen = !isDebugOpen;
+    if (isMenuOpen)
     {
-        ImGui::Text("FPS: %i", GetFPS());
-        ImGui::Separator();
-        if(ImGui::BeginMenu("Windows"))
+        ImGui::Begin("Debug Menu", &isMenuOpen, ImGuiWindowFlags_MenuBar);
+        if(ImGui::BeginMenuBar())
         {
-            if (ImGui::MenuItem("Open Debug"))
-                isDebugOpen = true;
-            ImGui::EndMenu();
+            ImGui::Text("FPS: %i", GetFPS());
+            ImGui::Separator();
+            if (ImGui::BeginMenu("Windows"))
+            {
+                if (ImGui::MenuItem("Open Debug", nullptr, isDebugOpen))
+                    isDebugOpen = true;
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
         }
-        if (ImGui::BeginMenu("Profile"))
-        {
-#define GENERATE_MENU_ITEM(function) if(ImGui::MenuItem(#function, nullptr, blockList.profile == BlockList::Profile::function)) \
+        ImGui::Text("Select Generation Profile");
+        ImGui::Indent();
+        #define GENERATE_MENU_ITEM(function) if(ImGui::MenuItem(#function, nullptr, blockList.profile == BlockList::Profile::function)) \
                                         blockList.profile = BlockList::Profile::function;
+        GENERATE_MENU_ITEM(SIN);
+        GENERATE_MENU_ITEM(TAN);
+        GENERATE_MENU_ITEM(ELLIPTIC);
+        GENERATE_MENU_ITEM(POLYNOMIAL);
+        GENERATE_MENU_ITEM(RANDOM);
+        #undef GENERATE_MENU_ITEM
+        ImGui::Unindent();
 
-            GENERATE_MENU_ITEM(SIN);
-            GENERATE_MENU_ITEM(TAN);
-            GENERATE_MENU_ITEM(ELLIPTIC);
-            GENERATE_MENU_ITEM(POLYNOMIAL);
-            GENERATE_MENU_ITEM(RANDOM);
+        ImGui::Text("Inputs");
+        ImGui::Indent();
+        ImGui::Text("Desktop:");
+        ImGui::Indent();
+        ImGui::Text("Space: up");
+        ImGui::Text("+/D/->: Speed up");
+        ImGui::Text("-/A/<-: Slow Down");
+        ImGui::Unindent();
+        ImGui::Unindent();
+        ImGui::Indent();
+        ImGui::Text("Mobile:");
+        ImGui::Indent();
+        ImGui::Text("One touch : Up");
+        ImGui::Text("Two touch : Speed up if touching on rightside, else slow down");
+        ImGui::Unindent();
 
-#undef GENERATE_MENU_ITEM
-
-            ImGui::EndMenu();
-        }
+        ImGui::End();
     }
-    ImGui::EndMainMenuBar();
 
     if (isDebugOpen)
     {
-        ImGui::SetNextWindowPos({4.0f/5.0f * screenSize.x, 30});
-        ImGui::SetNextWindowSize({1.0f/5.0f * screenSize.x, 4.0f/5.0f * screenSize.y});
         ImGui::Begin("Debug", &isDebugOpen);
+        ImGui::Checkbox("Show Debug Gizmos", &drawDebugGizmo);
         ImGui::DragFloat("Speed", &player.velocity.x);
-        ImGui::DragFloat("scaleSpeed", &scaleSpeed, 1, 0, FLT_MAX, "%.3f");
-        ImGui::DragFloat("targetHeight", &gameConfig.targetHeight);
-        ImGui::DragFloat2("Offset", (float*)&offset);
         ImGui::DragFloat2("PlayerPosition", (float*)&player.position);
         ImGui::DragFloat2("Origin", (float*)&origin);
-        ImGui::DragFloat2("Scale", (float*)&scale, 0.01, 0);
-        ImGui::SliderInt("Profile", (int*)&blockList.profile, 0, FUNCTION_COUNT);
-        ImGui::Text("Player: %.2f,\t%.2f", player.position.x , gameConfig.targetHeight - 2 * player.position.y);
+        ImGui::Text("y Offset: %.2f", yOffset);
+        ImGui::Text("Scale %.2f, %.2f", scale.x, scale.y);
+        ImGui::Text("Player: %.2f,\t%.2f", player.position.x , player.position.y);
+        ImGui::Text("targetHeight: %.2f", gameConfig.targetHeight * 0.5f);
         ImGui::Text("Velocity: %.2f,\t%.2f", player.velocity.x, player.velocity.y);
         ImGui::Text("ScreenSize: %.2f,\t%.2f", screenSize.x, screenSize.y);
-        ImGui::Text("lineHeight: %.2f", lineHeight);
-
-        ImGui::Text("Inputs\n"
-                    "Desktop:\n"
-                    "\tSpace: up\n"
-                    "\t+/D/->: Speed up\n"
-                    "\t-/A/<-: Slow Down\n"
-                    "Mobile:\n"
-                    "\tTwo touch : Up\n"
-                    "\tThree touch : Speed up if touching\n"
-                    "\t\ton right, else slow down");
         ImGui::End();
+    }
+
+    if (drawDebugGizmo)
+    {
+        float heightUnderPlayer = GetPointFromFunction( player.position.x + 15.f * scale.x, virtualPoints) * scale.y;
+
+        DrawDebugPoints(realPoints, GREEN, {0,origin.y}, {1, 1});
+        DrawDebugPoints(virtualPoints, RED, {0, origin.y + 3.f}, {1, scale.y});
+
+        DrawLine(0, gameConfig.currentScore + origin.y,
+                 screenSize.x, gameConfig.currentScore + origin.y, ColorAlpha(GRAY, 0.5));
+        DrawLine(30, 0,
+                 30, screenSize.y, ColorAlpha(GRAY, 0.5));
+        DrawCircle( 30.f,  heightUnderPlayer + origin.y - player.position.y, 3, LIME);
     }
     EndRLImGui();
 }

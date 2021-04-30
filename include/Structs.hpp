@@ -13,7 +13,7 @@ struct Player
         if (IsKeyDown(KEY_SPACE) ||
             IsKeyPressed(KEY_UP) ||
             IsKeyPressed(KEY_W)  ||
-            GetTouchPointsCount() == 2)
+            GetTouchPointsCount() == 1 && IsGestureDetected(GESTURE_HOLD | GESTURE_DRAG))
         {
             velocity.y = -100;
         }
@@ -29,7 +29,7 @@ struct Player
         {
             velocity.x += 20.f;
         }
-        if (GetTouchPointsCount() == 3 && GetTouchX() > GetScreenWidth() / 2)
+        if (GetTouchPointsCount() == 2 && GetTouchX() > GetScreenWidth() / 2)
         {
             velocity.x += 20.f * GetFrameTime();
         }
@@ -39,7 +39,7 @@ struct Player
         {
             velocity.x -= 20.f;
         }
-        if (GetTouchPointsCount() == 3 && GetTouchX() < GetScreenWidth() / 2)
+        if (GetTouchPointsCount() == 2 && GetTouchX() < GetScreenWidth() / 2)
         {
             velocity.x -= 20.f * GetFrameTime();
         }
@@ -58,8 +58,9 @@ struct Transform2D
 
 struct GameConfig
 {
-    float lerpSpeed = 0.1;
     float targetHeight = 0;
+    float highScore = 0;
+    float currentScore = 0;
 };
 
 struct TerrainShader

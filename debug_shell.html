@@ -10,7 +10,7 @@
         div.emscripten { text-align: center; }
         div.emscripten_border { border: 1px solid black; }
         /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-        canvas.emscripten { border: 0px none; background-color: black; width: 100%; height: 100%; position:absolute }
+        canvas.emscripten { border: 0px none; background-color: black;}
 
         .spinner {
             height: 50px;
@@ -55,9 +55,9 @@
 </div>
     <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
 
-<!--<hr/>-->
-<!--<textarea class="emscripten" id="output" rows="8"></textarea>-->
-<!--<hr>-->
+<hr/>
+<textarea class="emscripten" id="output" rows="8"></textarea>
+<hr>
 <script type='text/javascript'>
     var statusElement = document.getElementById('status');
     var progressElement = document.getElementById('progress');

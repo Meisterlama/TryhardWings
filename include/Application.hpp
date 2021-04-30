@@ -21,7 +21,7 @@ private:
     Vector2 screenSize;
     TerrainShader terrainShader;
     GameConfig gameConfig{};
-    Vector2 offset{};
+    float yOffset = 0;
     Vector2 scale{1.0, 1.0};
     Vector2 origin{};
     RenderTexture2D target;

@@ -42,7 +42,7 @@ class BlockList
 private:
     std::vector<Block> blockVec;
     bool descending = false;
-    const MathFunction* functions[FUNCTION_COUNT] = {
+    MathFunction* functions[FUNCTION_COUNT] = {
             sinMapped,
             tanhMapped,
             ellipticMapped,
@@ -71,5 +71,5 @@ public:
         RANDOM,
     };
 
-    Profile profile{POLYNOMIAL};
+    Profile profile{RANDOM};
 };

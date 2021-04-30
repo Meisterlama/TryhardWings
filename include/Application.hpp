@@ -18,7 +18,7 @@ private:
     BlockList blockList;
     Player player;
 
-    Vector2 screenSize{1000.f, 600.f};
+    Vector2 screenSize;
     TerrainShader terrainShader;
     GameConfig gameConfig{};
     Vector2 offset{};

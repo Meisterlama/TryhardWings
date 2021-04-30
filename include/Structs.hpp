@@ -10,10 +10,40 @@ struct Player
 
     void Update()
     {
-        if (IsKeyDown(KEY_SPACE) || GetTouchPointsCount() == 2)
+        if (IsKeyDown(KEY_SPACE) ||
+            IsKeyPressed(KEY_UP) ||
+            IsKeyPressed(KEY_W)  ||
+            GetTouchPointsCount() == 2)
         {
             velocity.y = -100;
         }
+        if (IsKeyDown(KEY_DOWN) ||
+            IsKeyDown(KEY_S)    ||
+            GetTouchPointsCount() == 2)
+        {
+            velocity.y += 200 * GetFrameTime();
+        }
+        if (IsKeyPressed(KEY_KP_ADD) ||
+            IsKeyPressed(KEY_RIGHT)  ||
+            IsKeyPressed(KEY_D))
+        {
+            velocity.x += 20.f;
+        }
+        if (GetTouchPointsCount() == 3 && GetTouchX() > GetScreenWidth() / 2)
+        {
+            velocity.x += 20.f * GetFrameTime();
+        }
+        if (IsKeyPressed(KEY_KP_SUBTRACT) ||
+            IsKeyPressed(KEY_LEFT)        ||
+            IsKeyPressed(KEY_A))
+        {
+            velocity.x -= 20.f;
+        }
+        if (GetTouchPointsCount() == 3 && GetTouchX() < GetScreenWidth() / 2)
+        {
+            velocity.x -= 20.f * GetFrameTime();
+        }
+
         velocity.y += acceleration * GetFrameTime();
 
         position = Vector2Add(position, Vector2Multiply(velocity, {GetFrameTime(), GetFrameTime()}));

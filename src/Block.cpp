@@ -1,18 +1,15 @@
 #include <raymath.h>
 #include "Block.hpp"
 
-Block::Block(Vector2 startPos, Vector2 extent, float (*func)(float, bool), bool ascending)
+Block::Block(Vector2 startPos, Vector2 extent, MathFunction* func, bool descending)
 : startPos(startPos)
 , extent(extent)
-, ascending(ascending)
+, descending(descending)
 {
     for (int i = 0; i < BLOCK_POINTS_NUM; i++)
     {
         float step = static_cast<float>(i) / BLOCK_POINTS_NUM;
-        Vector2 newPoint = Vector2 {
-                step,
-                func(step, ascending),
-                };
+        Vector2 newPoint = { step, func(step, descending)};
         pointList[i] = newPoint;
     }
 }
@@ -57,19 +54,7 @@ Vector2 GetRandomVector()
 {
     return Vector2{(float)GetRandomValue(BLOCK_MIN_WIDTH, BLOCK_MAX_WIDTH),
                    (float)GetRandomValue(BLOCK_MIN_HEIGHT, BLOCK_MAX_HEIGHT)};
-}
-
-float sinMapped(float x, bool ascending)
-{
-    float value = 0.5f * sinf(x * PI - PI/2) + 0.5f;
-    return (ascending) ? value : -value;
-}
-
-float tanhMapped(float x, bool ascending)
-{
-    float expo = exp(-5.f * (2.f * x - 1.f));
-    float value = (((1.f - expo)/(1.f + expo)) + 1.f)/2.f;
-    return (ascending) ? value : -value;
+//    return Vector2{50.f, 50.f};
 }
 
 BlockList::BlockList(int blockCounts)
@@ -79,11 +64,17 @@ BlockList::BlockList(int blockCounts)
     {
         if (i == 0)
         {
-            blockVec.emplace_back(Vector2{0, 0}, GetRandomVector(), tanhMapped, true);
+            blockVec.emplace_back(Vector2{0, 0},
+                                  GetRandomVector(),
+                                  GetRandomFunction(),
+                                  GetDirection());
         }
         else
         {
-            blockVec.emplace_back(blockVec[i-1].GetLastPoint(), GetRandomVector(), tanhMapped, (i%2));
+            blockVec.emplace_back(blockVec[i-1].GetLastPoint(),
+                                  GetRandomVector(),
+                                  GetRandomFunction(),
+                                  GetDirection());
         }
     }
 }
@@ -109,7 +100,10 @@ float BlockList::GetFirstBlockWidth()
 void BlockList::Shift()
 {
     blockVec.erase(blockVec.cbegin());
-    blockVec.emplace_back(blockVec.back().GetLastPoint(), GetRandomVector(), tanhMapped, GetRandomValue(0, 1));
+    blockVec.emplace_back(blockVec.back().GetLastPoint(),
+                          GetRandomVector(),
+                          GetRandomFunction(),
+                          GetDirection());
 }
 
 Vector2& BlockList::GetFirstPoint()
@@ -130,4 +124,27 @@ void BlockList::ResetOffset()
             blockVec[i].GetStartPoint().x = blockVec[i-1].GetLastPoint().x;
         }
     }
+}
+
+MathFunction *BlockList::GetRandomFunction()
+{
+    MathFunction *function;
+    int index = 0;
+    switch (profile)
+    {
+        case RANDOM:
+            index = GetRandomValue(0, FUNCTION_COUNT - 1);
+            break;
+        default:
+            index = profile;
+            break;
+    }
+    TraceLog(LOG_INFO, TextFormat("Got function with idx: %i", index));
+    return functions[index];
+}
+
+bool BlockList::GetDirection()
+{
+    descending = GetRandomValue(0, 10) < 7;
+    return descending;
 }

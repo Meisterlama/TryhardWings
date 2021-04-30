@@ -7,8 +7,9 @@
 #include "rlImGui.h"
 
 Application::Application(Vector2 screenSize)
-: blockList(40)
+: blockList(30)
 , terrainShader(TextFormat(TextFormat("assets/terrain%i.fs", GLSL_VERSION)), DARKBLUE, DARKBROWN)
+, screenSize(screenSize)
 {
     SetShaderValue(terrainShader.shader,
                    terrainShader.resolutionLoc,
@@ -42,22 +43,7 @@ void Application::Update()
     }
 
     // INPUTS
-    if (IsKeyPressed(KEY_KP_ADD))
-    {
-        player.velocity.x += 20.f;
-    }
-    if (GetTouchPointsCount() == 3 && (float)GetTouchX() > screenSize.x / 2)
-    {
-        player.velocity.x += 20.f * GetFrameTime();
-    }
-    if (IsKeyPressed(KEY_KP_SUBTRACT))
-    {
-        player.velocity.x -= 20.f;
-    }
-    if (GetTouchPointsCount() == 3 && (float)GetTouchX() < screenSize.x / 2)
-    {
-        player.velocity.x -= 20.f * GetFrameTime();
-    }
+
 
     if(IsKeyPressed(KEY_F1))
     {
@@ -113,14 +99,16 @@ void Application::Update()
 
 Application::~Application()
 {
+    UnloadRenderTexture(target);
     ShutdownRLImGui();
     CloseWindow();
 }
 void Application::DrawGameState(float heightUnderPlayer)
 {
-    ClearBackground(WHITE);
+    ClearBackground(BLACK);
     BeginShaderMode(terrainShader.shader);
     BeginTextureMode(target);
+    ClearBackground(BLANK);
     DrawTextureRec(target.texture,
                    Rectangle {0, 0, (float) target.texture.width, (float) target.texture.height},
                    Vector2 {0, 0},
@@ -160,6 +148,21 @@ void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std
                 isDebugOpen = true;
             ImGui::EndMenu();
         }
+        if (ImGui::BeginMenu("Profile"))
+        {
+#define GENERATE_MENU_ITEM(function) if(ImGui::MenuItem(#function, nullptr, blockList.profile == BlockList::Profile::function)) \
+                                        blockList.profile = BlockList::Profile::function;
+
+            GENERATE_MENU_ITEM(SIN);
+            GENERATE_MENU_ITEM(TAN);
+            GENERATE_MENU_ITEM(ELLIPTIC);
+            GENERATE_MENU_ITEM(POLYNOMIAL);
+            GENERATE_MENU_ITEM(RANDOM);
+
+#undef GENERATE_MENU_ITEM
+
+            ImGui::EndMenu();
+        }
     }
     ImGui::EndMainMenuBar();
 
@@ -175,6 +178,7 @@ void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std
         ImGui::DragFloat2("PlayerPosition", (float*)&player.position);
         ImGui::DragFloat2("Origin", (float*)&origin);
         ImGui::DragFloat2("Scale", (float*)&scale, 0.01, 0);
+        ImGui::SliderInt("Profile", (int*)&blockList.profile, 0, FUNCTION_COUNT);
         ImGui::Text("Player: %.2f,\t%.2f", player.position.x , gameConfig.targetHeight - 2 * player.position.y);
         ImGui::Text("Velocity: %.2f,\t%.2f", player.velocity.x, player.velocity.y);
         ImGui::Text("ScreenSize: %.2f,\t%.2f", screenSize.x, screenSize.y);
@@ -183,8 +187,8 @@ void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std
         ImGui::Text("Inputs\n"
                     "Desktop:\n"
                     "\tSpace: up\n"
-                    "\t+: Speed up\n"
-                    "\t-: Slow Down\n"
+                    "\t+/D/->: Speed up\n"
+                    "\t-/A/<-: Slow Down\n"
                     "Mobile:\n"
                     "\tTwo touch : Up\n"
                     "\tThree touch : Speed up if touching\n"

@@ -24,7 +24,8 @@ void main()
 
     float point = mix(pointList[index].y, pointList[index+1].y, screen_step * ARRAY_SIZE - index);
 
-    finalColor = mix(downColor, upColor, step(fragTexCoord.y * resolution.y - offset.y, point));
+    float cmp = fragTexCoord.y * resolution.y - offset.y;
+    finalColor = mix(downColor, upColor, smoothstep(cmp-1, cmp+1, point));
 
     //    finalColor = vec4(pixelPos.x, pixelPos.y, 0.0, 1.0);
 }

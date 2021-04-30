@@ -1,14 +1,23 @@
 #pragma once
 #include <vector>
+
+#define FUNCTION_IMPLEM
+#include "Functions.hpp"
+
 #define BLOCK_LIST_SIZE 10
-#define BLOCK_MIN_WIDTH 15
+#define BLOCK_MIN_WIDTH 50
 #define BLOCK_MAX_WIDTH 100
 #define BLOCK_MIN_HEIGHT 10
 #define BLOCK_MAX_HEIGHT 100
 #define BLOCK_POINTS_NUM 10
 
+#define FUNCTION_COUNT 4
+
+typedef float(MathFunction)(float, bool);
+
 struct Vector2;
 Vector2 GetRandomVector();
+
 class Block
 {
 private:
@@ -16,11 +25,11 @@ private:
     Vector2 startPos;
     Vector2 extent;
     Vector2 pointList[BLOCK_POINTS_NUM];
-    bool ascending;
+    bool descending;
 
 public:
 
-    Block(Vector2 startPos, Vector2 extent, float (*func)(float, bool), bool ascending);
+    Block(Vector2 startPos, Vector2 extent, MathFunction* func, bool descending);
     std::vector<Vector2> GetPointList();
     Vector2 GetLastPoint();
     Vector2& GetStartPoint();
@@ -32,6 +41,16 @@ class BlockList
 {
 private:
     std::vector<Block> blockVec;
+    bool descending = false;
+    const MathFunction* functions[FUNCTION_COUNT] = {
+            sinMapped,
+            tanhMapped,
+            ellipticMapped,
+            polynomialMapped,
+    };
+
+    MathFunction* GetRandomFunction();
+    bool GetDirection();
 public:
     BlockList(int blockCounts);
 
@@ -42,4 +61,15 @@ public:
     Vector2& GetFirstPoint();
     void Shift();
     void ResetOffset();
+
+    enum Profile
+    {
+        SIN,
+        TAN,
+        ELLIPTIC,
+        POLYNOMIAL,
+        RANDOM,
+    };
+
+    Profile profile{POLYNOMIAL};
 };

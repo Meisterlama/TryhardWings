@@ -11,27 +11,35 @@
 #include "Structs.hpp"
 #include "Application.hpp"
 
+#if defined(PLATFORM_DESKTOP)
+#define START_SCREEN_WIDTH 1000
+#define START_SCREEN_HEIGHT 600
+#else
+#define START_SCREEN_WIDTH 500
+#define START_SCREEN_HEIGHT 300
+#endif
+//
 void UpdateApplication()
 {
-    static Application application({1000.f, 600.f});
+    static Application application({START_SCREEN_WIDTH, START_SCREEN_HEIGHT});
     application.Update();
 }
 
 int main()
 {
-    InitWindow((int) 1000, (int) 600, "Try Hard Wings");
+    InitWindow(START_SCREEN_WIDTH, START_SCREEN_HEIGHT, "Try Hard Wings");
     SetWindowState(FLAG_WINDOW_RESIZABLE);
     SetTargetFPS(0);
 
 #if defined(PLATFORM_DESKTOP)
 
-    Application application({1000.f, 600.f});
+    Application application({START_SCREEN_WIDTH, START_SCREEN_HEIGHT});
     while (!WindowShouldClose())
     {
         application.Update();
     }
 #elif defined(PLATFORM_WEB)
-    emscripten_set_main_loop(UpdateApplication, 60, 1);
+    emscripten_set_main_loop(UpdateApplication, 0, 1);
 #endif
     return 0;
 }

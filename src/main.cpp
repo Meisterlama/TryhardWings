@@ -23,13 +23,13 @@ void UpdateApplication()
     static Application application({START_SCREEN_WIDTH, START_SCREEN_HEIGHT});
     application.Update();
 }
-
+//
 int main()
 {
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(START_SCREEN_WIDTH, START_SCREEN_HEIGHT, "Try Hard Wings");
     SetWindowState(FLAG_WINDOW_RESIZABLE);
-    SetTargetFPS(0);
+    SetTargetFPS(144);
 
 #if defined(PLATFORM_DESKTOP)
 

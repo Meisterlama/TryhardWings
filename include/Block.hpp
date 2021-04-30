@@ -13,9 +13,8 @@
 
 #define FUNCTION_COUNT 4
 
-typedef float(MathFunction)(float, bool);
+typedef float(MathFunction)(float, bool, bool);
 
-struct Vector2;
 Vector2 GetRandomVector();
 
 class Block
@@ -25,12 +24,16 @@ private:
     Vector2 startPos;
     Vector2 extent;
     Vector2 pointList[BLOCK_POINTS_NUM];
+    Vector2 pointDerivativeList[BLOCK_POINTS_NUM];
     bool descending;
+    MathFunction* func;
 
 public:
 
     Block(Vector2 startPos, Vector2 extent, MathFunction* func, bool descending);
     std::vector<Vector2> GetPointList();
+    std::vector<Vector2> GetPointDerivativeList();
+    float GetDerivativeAt(float x);
     Vector2 GetLastPoint();
     Vector2& GetStartPoint();
     void SetStartPoint(Vector2 startPoint);
@@ -57,8 +60,10 @@ public:
     //TODO: Block function
 //    void Shift();
     std::vector<Vector2> GetPointList();
+    std::vector<Vector2> GetPointDerivativeList();
+    float GetDerivativeAt(float x);
     float GetFirstBlockWidth();
-    Vector2& GetFirstPoint();
+    Vector2& GetFirstPoint(int blockIndex);
     void Shift();
     void ResetOffset();
 

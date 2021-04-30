@@ -7,7 +7,7 @@
 #include "rlImGui.h"
 
 Application::Application(Vector2 screenSize)
-: blockList(30)
+: blockList(5)
 , terrainShader(TextFormat(TextFormat("assets/terrain%i.fs", GLSL_VERSION)), DARKBLUE, DARKBROWN)
 , screenSize(screenSize)
 {
@@ -51,7 +51,7 @@ void Application::Update()
     while (player.position.x > blockList.GetFirstBlockWidth())
     {
         blockList.Shift();
-        player.position.x -= blockList.GetFirstPoint().x;
+        player.position.x -= blockList.GetFirstPoint(0).x;
         blockList.ResetOffset();
     }
 
@@ -65,11 +65,25 @@ void Application::Update()
                         virtualPoints);
 
     float heightUnderPlayer = GetPointFromFunction( player.position.x + 15.f * scale.x, virtualPoints) * scale.y;
+
     if (player.position.y > heightUnderPlayer)
     {
-        player.velocity.y = 0;
+        player.velocity.y -= player.velocity.y * GetFrameTime();
+        float derivativeUnderPlayer = blockList.GetDerivativeAt((player.position.x + 15.0f) * scale.x);
         gameConfig.targetHeight = origin.y + (player.position.y - yOffset);
-//        player.velocity.y -= (player.position.y - heightUnderPlayer);
+
+        if (derivativeUnderPlayer > 0)
+        {
+            player.velocity.x +=  100 * derivativeUnderPlayer * GetFrameTime();
+        }
+        else
+        {
+            player.velocity.x +=  200 * derivativeUnderPlayer * GetFrameTime();
+            player.velocity.y += player.velocity.x * 10 * derivativeUnderPlayer * GetFrameTime();
+        }
+        if (player.velocity.x < 20)
+            player.velocity.x = 20;
+
         player.position.y = heightUnderPlayer;
     }
 
@@ -97,7 +111,7 @@ Application::~Application()
 }
 void Application::DrawGameState(float heightUnderPlayer)
 {
-    ClearBackground(BLACK);
+    ClearBackground(WHITE);
     BeginShaderMode(terrainShader.shader);
     BeginTextureMode(target);
     ClearBackground(BLANK);
@@ -122,10 +136,17 @@ void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std
 {
     BeginRLImGui();
     static bool isMenuOpen = false;
-    static bool isDebugOpen = false;
     static bool isMetricsOpen = false;
     static bool isHelpOpen = false;
+
+
+#ifndef NDEBUG
+    static bool isDebugOpen = true;
+    static bool drawDebugGizmo = true;
+#else
+    static bool isDebugOpen = false;
     static bool drawDebugGizmo = false;
+#endif
 
     if (IsKeyPressed(KEY_F1))
         isMenuOpen = !isMenuOpen;
@@ -179,6 +200,7 @@ void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std
         ImGui::End();
     }
 
+    std::vector<Vector2> derivatives = blockList.GetPointDerivativeList();
     if (isDebugOpen)
     {
         ImGui::Begin("Debug", &isDebugOpen);
@@ -186,6 +208,7 @@ void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std
         ImGui::DragFloat("Speed", &player.velocity.x);
         ImGui::DragFloat2("PlayerPosition", (float*)&player.position);
         ImGui::DragFloat2("Origin", (float*)&origin);
+        ImGui::Text("Derivative at player pos : %.2f", blockList.GetDerivativeAt(player.position.x));
         ImGui::Text("y Offset: %.2f", yOffset);
         ImGui::Text("Scale %.2f, %.2f", scale.x, scale.y);
         ImGui::Text("Player: %.2f,\t%.2f", player.position.x , player.position.y);
@@ -198,15 +221,20 @@ void Application::DrawDebug(const std::vector<Vector2>& virtualPoints, const std
     if (drawDebugGizmo)
     {
         float heightUnderPlayer = GetPointFromFunction( player.position.x + 15.f * scale.x, virtualPoints) * scale.y;
+        Vector2 collisionPointUnderPlayer = {30.f, heightUnderPlayer + origin.y - player.position.y};
 
         DrawDebugPoints(realPoints, GREEN, {0,origin.y}, {1, 1});
         DrawDebugPoints(virtualPoints, RED, {0, origin.y + 3.f}, {1, scale.y});
+        DrawDebugPoints(derivatives, BLUE, {0, origin.y}, {1, scale.y});
 
         DrawLine(0, gameConfig.currentScore + origin.y,
                  screenSize.x, gameConfig.currentScore + origin.y, ColorAlpha(GRAY, 0.5));
         DrawLine(30, 0,
                  30, screenSize.y, ColorAlpha(GRAY, 0.5));
-        DrawCircle( 30.f,  heightUnderPlayer + origin.y - player.position.y, 3, LIME);
+        DrawCircle( collisionPointUnderPlayer.x, collisionPointUnderPlayer.y, 3, LIME);
+
+        DrawLineV(collisionPointUnderPlayer, Vector2Add(collisionPointUnderPlayer, {0, blockList.GetDerivativeAt((player.position.x + 15.0f) * scale.x) * 25}), PINK);
+
     }
     EndRLImGui();
 }

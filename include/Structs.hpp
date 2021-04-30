@@ -15,7 +15,8 @@ struct Player
             IsKeyPressed(KEY_W)  ||
             GetTouchPointsCount() == 1 && IsGestureDetected(GESTURE_HOLD | GESTURE_DRAG))
         {
-            velocity.y = -100;
+            velocity.y += 200 * GetFrameTime();
+            velocity.x += 10 * GetFrameTime();
         }
         if (IsKeyDown(KEY_DOWN) ||
             IsKeyDown(KEY_S)    ||
@@ -23,6 +24,8 @@ struct Player
         {
             velocity.y += 200 * GetFrameTime();
         }
+
+#ifndef NDEBUG
         if (IsKeyPressed(KEY_KP_ADD) ||
             IsKeyPressed(KEY_RIGHT)  ||
             IsKeyPressed(KEY_D))
@@ -43,7 +46,7 @@ struct Player
         {
             velocity.x -= 20.f * GetFrameTime();
         }
-
+#endif
         velocity.y += acceleration * GetFrameTime();
 
         position = Vector2Add(position, Vector2Multiply(velocity, {GetFrameTime(), GetFrameTime()}));

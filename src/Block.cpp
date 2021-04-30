@@ -5,12 +5,15 @@ Block::Block(Vector2 startPos, Vector2 extent, MathFunction* func, bool descendi
 : startPos(startPos)
 , extent(extent)
 , descending(descending)
+, func(func)
 {
     for (int i = 0; i < BLOCK_POINTS_NUM; i++)
     {
         float step = static_cast<float>(i) / BLOCK_POINTS_NUM;
-        Vector2 newPoint = { step, func(step, descending)};
+        Vector2 newPoint = { step, func(step, descending, false)};
+        Vector2 newPointDerivative = { step, func(step, descending, true)};
         pointList[i] = newPoint;
+        pointDerivativeList[i] = newPointDerivative;
     }
 }
 
@@ -48,6 +51,24 @@ float Block::GetWidth()
 void Block::SetStartPoint(Vector2 startPoint)
 {
     startPos = startPoint;
+}
+
+std::vector<Vector2> Block::GetPointDerivativeList()
+{
+    std::vector<Vector2> points;
+    points.reserve(BLOCK_POINTS_NUM);
+    for (int i = 0; i < BLOCK_POINTS_NUM; i++)
+    {
+        Vector2 scaledRelPos = Vector2Multiply(pointDerivativeList[i], extent);
+        Vector2 pos = Vector2Add(scaledRelPos, startPos);
+        points.push_back(pos);
+    }
+    return points;
+}
+
+float Block::GetDerivativeAt(float x)
+{
+    return func(x / extent.x, descending, true);
 }
 
 Vector2 GetRandomVector()
@@ -92,6 +113,19 @@ std::vector<Vector2> BlockList::GetPointList()
     return points;
 }
 
+std::vector<Vector2> BlockList::GetPointDerivativeList()
+{
+    std::vector<Vector2> points;
+    for (auto & block : blockVec)
+    {
+        for (auto point : block.GetPointDerivativeList())
+        {
+            points.push_back(point);
+        }
+    }
+    return points;
+}
+
 float BlockList::GetFirstBlockWidth()
 {
     return blockVec[0].GetWidth();// + blockVec[0].GetStartPoint().x;
@@ -106,9 +140,9 @@ void BlockList::Shift()
                           GetDirection());
 }
 
-Vector2& BlockList::GetFirstPoint()
+Vector2& BlockList::GetFirstPoint(int blockIndex)
 {
-    return blockVec[0].GetStartPoint();
+    return blockVec[blockIndex].GetStartPoint();
 }
 
 void BlockList::ResetOffset()
@@ -146,4 +180,9 @@ bool BlockList::GetDirection()
 {
     descending = GetRandomValue(0, 10) < 7;
     return descending;
+}
+
+float BlockList::GetDerivativeAt(float x)
+{
+    return (x< blockVec[0].GetWidth()) ? blockVec[0].GetDerivativeAt(x) : blockVec[1].GetDerivativeAt(x - blockVec[0].GetWidth());
 }
